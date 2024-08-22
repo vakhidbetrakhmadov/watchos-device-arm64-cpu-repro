@@ -1,0 +1,68 @@
+load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application", "watchos_extension")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("@build_bazel_rules_ios//rules:framework.bzl", "apple_framework")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+
+watchos_application(
+    name = "ButtonsWatch",
+    bundle_id = "com.google.Buttons.watchkitapp",
+    extension = ":ButtonsWatchExtension",
+    infoplists = ["ButtonsWatch/Info.plist"],
+    minimum_os_version = "4.0",
+    resources = ["ButtonsWatch/Base.lproj/Interface.storyboard"],
+    provisioning_profile = "integration_testing_ios.mobileprovision",
+)
+
+watchos_extension(
+    name = "ButtonsWatchExtension",
+    bundle_id = "com.google.Buttons.watchkitapp.watchkitextension",
+    infoplists = ["ButtonsWatchExtension/Info.plist"],
+    minimum_os_version = "4.0",
+    provisioning_profile = "integration_testing_ios.mobileprovision",
+    deps = select({ 
+        ":swift_library": [":ButtonsWatchExtensionLibrary"],
+        ":apple_framework": [":ButtonsWatchExtensionFramework"],
+    })
+)
+
+swift_library(
+    name = "ButtonsWatchExtensionLibrary",
+    srcs = [
+        "ButtonsWatchExtension/ComplicationController.swift",
+        "ButtonsWatchExtension/ExtensionDelegate.swift",
+        "ButtonsWatchExtension/InterfaceController.swift",
+        "ButtonsWatchExtension/NotificationController.swift",
+    ],
+    module_name = "ButtonsWatchExtension",
+)
+
+apple_framework(
+    name = "ButtonsWatchExtensionFramework",
+    srcs = [
+        "ButtonsWatchExtension/ComplicationController.swift",
+        "ButtonsWatchExtension/ExtensionDelegate.swift",
+        "ButtonsWatchExtension/InterfaceController.swift",
+        "ButtonsWatchExtension/NotificationController.swift",
+    ],
+    module_name = "ButtonsWatchExtension",
+)
+
+string_flag(
+    name = "test_case",
+    values = ["swift_library", "apple_framework"],
+    build_setting_default = "swift_library",
+)
+
+config_setting(
+    name = "swift_library",
+    flag_values = {
+        ":test_case": "swift_library",
+    },
+)
+
+config_setting(
+    name = "apple_framework",
+    flag_values = {
+        ":test_case": "apple_framework",
+    },
+)
